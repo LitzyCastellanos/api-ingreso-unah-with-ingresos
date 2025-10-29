@@ -1,48 +1,92 @@
-import { query } from '../db.js';
+import { Persona } from '../modelos/persona.js';
+import { Estudiante } from '../modelos/estudiantes.js';
+import { sequelize } from '../config/orm.js';
 
-export async function getPersonaByDni(req, res, next) {
+/**
+ * Registrar una persona (y su rol si aplica)
+ * Si el rol es 'estudiante', también crea el registro en la tabla app.estudiantes.
+ */
+export async function registrarPersona(req, res) {
+  const t = await sequelize.transaction();
+
+  try {
+    const { dni, nombre_completo, correo, telefono, rol, numero_cuenta, forma03_activa, periodo_vigente } = req.body;
+
+    // ✅ Validaciones básicas
+    if (!dni || !nombre_completo) {
+      return res.status(400).json({ ok: false, message: 'DNI y nombre completo son obligatorios' });
+    }
+
+    // 🧩 Validar duplicados
+    const existe = await Persona.findOne({ where: { dni } });
+    if (existe) {
+      return res.status(409).json({ ok: false, message: 'Ya existe una persona con ese DNI' });
+    }
+
+    // 👤 Crear persona
+    const persona = await Persona.create({
+      dni,
+      nombre_completo,
+      correo: correo || null,
+      telefono: telefono || null
+    }, { transaction: t });
+
+    // 🎭 Insertar rol en la tabla intermedia
+    if (rol) {
+      await sequelize.query(
+        `INSERT INTO app.persona_roles (persona_id, rol_id)
+         VALUES ($1, (SELECT rol_id FROM app.roles_persona WHERE LOWER(nombre_rol) = LOWER($2) LIMIT 1))`,
+        { bind: [persona.persona_id, rol], transaction: t }
+      );
+    }
+
+    // 🎓 Si el rol es estudiante, también crear el registro en app.estudiantes
+    if (rol && rol.toLowerCase() === 'estudiante') {
+      await Estudiante.create({
+        persona_id: persona.persona_id,
+        numero_cuenta,
+        forma03_activa: forma03_activa === true || forma03_activa === 'Sí',
+        periodo_vigente
+      }, { transaction: t });
+    }
+
+    await t.commit();
+
+    return res.status(201).json({
+      ok: true,
+      message: `Persona creada exitosamente${rol ? ` como ${rol}` : ''}`,
+      persona
+    });
+
+  } catch (error) {
+    await t.rollback();
+    console.error('❌ Error registrarPersona:', error);
+    res.status(500).json({
+      ok: false,
+      message: 'Error en el servidor',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Obtener una persona por su DNI
+ */
+export async function getPersonaByDni(req, res) {
   try {
     const { dni } = req.params;
-    const { rows } = await query(`
-      SELECT p.persona_id, p.dni, p.nombre_completo,
-             COALESCE(ARRAY_AGG(r.nombre_rol ORDER BY r.nombre_rol) FILTER (WHERE r.nombre_rol IS NOT NULL), '{}') AS roles
-      FROM app.personas p
-      LEFT JOIN app.persona_roles pr USING(persona_id)
-      LEFT JOIN app.roles_persona r USING(rol_id)
-      WHERE p.dni = $1
-      GROUP BY 1,2,3
-    `, [dni]);
+    const persona = await Persona.findOne({
+      where: { dni },
+      include: [{ model: Estudiante, as: 'estudiante' }]
+    });
 
-    if (!rows.length) return res.json({ existe: false });
-    return res.json({ existe: true, persona: rows[0] });
-  } catch (e) { next(e); }
-}
+    if (!persona) {
+      return res.status(404).json({ ok: false, message: 'Persona no encontrada' });
+    }
 
-export async function upsertEstudiante(req, res, next) {
-  try {
-    const { dni, nombre_completo, numero_cuenta, face_template_b64 } = req.body;
-    const { rows } = await query(
-      'SELECT app.upsert_perfil_estudiante($1,$2,$3,$4) AS persona_id',
-      [dni, nombre_completo, numero_cuenta, face_template_b64]
-    );
-    return res.status(201).json({ ok: true, persona_id: rows[0].persona_id });
-  } catch (e) { next(pgError(e)); }
-}
-
-export async function upsertEmpleado(req, res, next) {
-  try {
-    const { dni, nombre_completo, numero_empleado, face_template_b64 } = req.body;
-    const { rows } = await query(
-      'SELECT app.upsert_perfil_empleado($1,$2,$3,$4) AS persona_id',
-      [dni, nombre_completo, numero_empleado, face_template_b64]
-    );
-    return res.status(201).json({ ok: true, persona_id: rows[0].persona_id });
-  } catch (e) { next(pgError(e)); }
-}
-
-function pgError(e){
-  const err = new Error(e.detail || e.message);
-  if (String(e.message).includes('Una persona no puede tener más de 2')) err.status = 422;
-  if (String(e.message).includes('no válido en UNAH')) err.status = 409;
-  return err;
+    res.json({ ok: true, persona });
+  } catch (error) {
+    console.error('❌ getPersonaByDni:', error);
+    res.status(500).json({ ok: false, message: 'Error en el servidor' });
+  }
 }

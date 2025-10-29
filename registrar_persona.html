@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registrar Persona y Rol</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 500px; margin: 30px auto; }
+  input, select, button { width: 100%; padding: 10px; margin: 5px 0; }
+  button { background-color: #0066cc; color: #fff; border: none; cursor: pointer; }
+  button:hover { background-color: #004b99; }
+  #resultado { white-space: pre; background: #eee; padding: 10px; }
+  #extraCampos { display: none; margin-top: 10px; padding: 10px; background: #f7f7f7; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<h2>Registrar Persona</h2>
+
+<form id="personaForm">
+  <input type="text" id="dni" placeholder="DNI" required>
+  <input type="text" id="nombre_completo" placeholder="Nombre Completo" required>
+  <input type="email" id="correo" placeholder="Correo (opcional)">
+  <input type="text" id="telefono" placeholder="Teléfono (opcional)">
+
+  <label for="rol">Seleccione el rol:</label>
+  <select id="rol" required>
+    <option value="">-- Seleccione un rol --</option>
+    <option value="estudiante">Estudiante</option>
+    <option value="empleado">Empleado</option>
+    <option value="visitante">Visitante</option>
+  </select>
+
+  <!-- Campos adicionales para estudiante -->
+  <div id="extraCampos">
+    <h4>Datos del estudiante</h4>
+    <input type="text" id="numero_cuenta" placeholder="Número de cuenta">
+    <select id="forma03_activa">
+      <option value="">¿Forma 03 activa?</option>
+      <option value="true">Sí</option>
+      <option value="false">No</option>
+    </select>
+    <input type="text" id="periodo_vigente" placeholder="Periodo vigente (ej: 2025-1)">
+  </div>
+
+  <button type="submit">Registrar</button>
+</form>
+
+<h3>Resultado:</h3>
+<pre id="resultado"></pre>
+
+<script>
+  const form = document.getElementById('personaForm');
+  const resultado = document.getElementById('resultado');
+  const rolSelect = document.getElementById('rol');
+  const extraCampos = document.getElementById('extraCampos');
+
+  // Mostrar/ocultar campos según el rol
+  rolSelect.addEventListener('change', () => {
+    if (rolSelect.value === 'estudiante') {
+      extraCampos.style.display = 'block';
+    } else {
+      extraCampos.style.display = 'none';
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      dni: document.getElementById('dni').value.trim(),
+      nombre_completo: document.getElementById('nombre_completo').value.trim(),
+      correo: document.getElementById('correo').value.trim() || null,
+      telefono: document.getElementById('telefono').value.trim() || null,
+      rol: rolSelect.value
+    };
+
+    // Agregar campos de estudiante si aplica
+    if (payload.rol === 'estudiante') {
+      payload.numero_cuenta = document.getElementById('numero_cuenta').value.trim();
+      payload.forma03_activa = document.getElementById('forma03_activa').value === 'true';
+      payload.periodo_vigente = document.getElementById('periodo_vigente').value.trim();
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/personas/registrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+      resultado.textContent = JSON.stringify(json, null, 2);
+    } catch (err) {
+      resultado.textContent = '❌ Error al conectar con la API:\n' + err.message;
+    }
+  });
+</script>
+
+</body>
+</html>

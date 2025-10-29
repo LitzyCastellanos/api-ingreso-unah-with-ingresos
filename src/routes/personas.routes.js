@@ -1,24 +1,12 @@
 import { Router } from 'express';
-import { getPersonaByDni, upsertEstudiante, upsertEmpleado } from '../controllers/personas.controller.js';
-import { estudianteSchema, empleadoSchema } from '../validators/schemas.js';
+import { registrarPersona, getPersonaByDni } from '../controllers/personas.controller.js';
 
-const r = Router();
+const router = Router();
 
-r.get('/:dni', getPersonaByDni);
+// Registrar persona
+router.post('/registrar', registrarPersona);
 
-r.post('/estudiante', validate(estudianteSchema), upsertEstudiante);
+// Consultar persona por DNI
+router.get('/:dni', getPersonaByDni);
 
-r.post('/empleado', validate(empleadoSchema), upsertEmpleado);
-
-export default r;
-
-function validate(schema){
-  return (req,res,next)=>{
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      const err = new Error(parsed.error.errors.map(e=>`${e.path.join('.')} ${e.message}`).join('; '));
-      err.status = 400; return next(err);
-    }
-    next();
-  };
-}
+export default router;

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registrar Persona</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 500px; margin: 30px auto; }
+  input, button { width: 100%; padding: 10px; margin: 5px 0; }
+  button { background-color: #0066cc; color: #fff; border: none; cursor: pointer; }
+  button:hover { background-color: #004b99; }
+  #resultado { white-space: pre; background: #eee; padding: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Registrar Persona</h2>
+
+<form id="personaForm">
+  <input type="text" id="dni" placeholder="DNI" required>
+  <input type="text" id="nombre_completo" placeholder="Nombre Completo" required>
+  <input type="email" id="correo" placeholder="Correo (opcional)">
+  <input type="text" id="telefono" placeholder="Teléfono (opcional)">
+  
+  <button type="submit">Registrar</button>
+</form>
+
+<h3>Resultado:</h3>
+<pre id="resultado"></pre>
+
+<script>
+  const form = document.getElementById('personaForm');
+  const resultado = document.getElementById('resultado');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+      dni: document.getElementById('dni').value,
+      nombre_completo: document.getElementById('nombre_completo').value,
+      correo: document.getElementById('correo').value,
+      telefono: document.getElementById('telefono').value
+    };
+
+    const res = await fetch('http://localhost:3000/prueba/crearPersona2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const json = await res.json();
+    resultado.textContent = JSON.stringify(json, null, 2);
+  });
+</script>
+
+</body>
+</html>

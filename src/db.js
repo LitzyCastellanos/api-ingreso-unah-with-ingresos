@@ -1,6 +1,11 @@
 import pg from 'pg';
 const { Pool } = pg;
 
+console.log(process.env.PG_DATABASE)
+console.log(process.env.PG_HOST)
+console.log(process.env.PG_PASSWORD)
+console.log(process.env.PG_USER)
+
 const pool = new Pool({
   host: process.env.PG_HOST,
   port: Number(process.env.PG_PORT || 5432),

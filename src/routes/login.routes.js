@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { loginestudiante } from '../controllers/login.controller.js';
+import { loginPersona } from '../controllers/login.controller.js';
 
 const router = Router();
 
-router.get('/numerodecuenta', loginestudiante);
+router.get('/dniPersona', loginPersona);
 
 export default router;

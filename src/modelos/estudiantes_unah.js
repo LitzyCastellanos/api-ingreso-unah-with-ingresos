@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/orm.js';
-import { PersonaUniversidad } from './Persona_unah.js';
+import { PersonaUniversidad } from './persona_unah.js';
 
 export const EstudianteUniversidad = sequelize.define('EstudianteUniversidad', {
   Id_estudiante_uni: {

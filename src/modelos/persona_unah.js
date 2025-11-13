@@ -6,6 +6,7 @@ export const PersonaUniversidad = sequelize.define('PersonaUniversidad', {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
+    allowNull: false
   },
   Nombre: {
     type: DataTypes.STRING(100),
@@ -20,29 +21,17 @@ export const PersonaUniversidad = sequelize.define('PersonaUniversidad', {
     allowNull: false,
     unique: true,
   },
-  Tipo: {
-    type: DataTypes.ENUM('Estudiante', 'Empleado'),
-    allowNull: false,
-  },
-  Carrera: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-  },
-  Puesto: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
+  Contrasena: {
+    type: DataTypes.STRING(255),
+    allowNull: false, 
   },
   Foto: {
     type: DataTypes.STRING(255),
     allowNull: true,
-  },
-  Num_cuenta: {
-    type: DataTypes.STRING(20),
-    allowNull: false,
-    unique: true,
-  },
+    defaultValue: null
+  }
 }, {
-  tableName: 'Personas_universidad', // nombre exacto de la tabla en MySQL
-  freezeTableName: true,             // evita pluralización
-  timestamps: false,                 // no tiene createdAt ni updatedAt
+  tableName: 'Personas_universidad',
+  freezeTableName: true,
+  timestamps: false,
 });

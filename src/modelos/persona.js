@@ -22,7 +22,7 @@ export const Persona = sequelize.define('Persona', {
   },
   Contrasena: {
     type: DataTypes.STRING(255),
-    allowNull: true,
+    allowNull: false,
   },
   Foto: {
     type: DataTypes.STRING(255),
